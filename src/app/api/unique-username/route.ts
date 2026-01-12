@@ -46,16 +46,15 @@ export async function GET(request: Request) {
           success: false,
           message: "Username already exists",
         },
-        { status: 500 }
+        { status: 409 }
       );
     }
-
     return Response.json(
         {
           success: true,
           message: "Username is available",
         },
-        { status: 400 }
+        { status: 200 }
       );
   } catch (error) {
     console.error("Error checking username", error);

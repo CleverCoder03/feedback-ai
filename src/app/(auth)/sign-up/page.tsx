@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-const SignInPage = () => {
+const SignUpPage = () => {
   const [username, setUsername] = useState("");
   const [usernameMessage, setUsernameMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,7 +137,7 @@ const SignInPage = () => {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (<>
                 <Loader2 className="mr-4 h-4 w-4 animate-spin" /> Please wait...
-              </>) : "Sign In"}
+              </>) : "Sign up"}
             </Button>
           </form>
         </Form>
@@ -154,4 +154,4 @@ const SignInPage = () => {
   );
 };
 
-export default SignInPage;
+export default SignUpPage;

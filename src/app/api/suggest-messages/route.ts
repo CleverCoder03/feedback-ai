@@ -1,7 +1,12 @@
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { streamText } from "ai";
 
 // Set the runtime to edge for best performance
 export const runtime = "edge";
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +26,7 @@ contribute to a positive and welcoming conversational
 environment.`;
 
     const result = streamText({
-      model: "openai/gpt-4o-mini",
+      model: openrouter('openai/gpt-oss-120b:free'),
       messages: [
         {
           role: "user",

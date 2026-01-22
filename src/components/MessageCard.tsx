@@ -36,37 +36,44 @@ type MessageCardProps = {
 const MessageCard = ({message, onMessageDelete}: MessageCardProps) => {
 
     const handleDeleteConfirm = async () => {
-        const response = await axios.delete<ApiResponse>(`/api/delete-message/${message._id.toString()}`)
+        const response = await axios.delete<ApiResponse>(`/api/delete-message/${message._id}`)
         toast.success(response.data.message)
         onMessageDelete(message._id.toString())
     }
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Card Title</CardTitle>
-        <CardDescription>Card Description</CardDescription>
-        <CardAction>Card Action</CardAction>
+        <CardTitle>Anonymous Messag</CardTitle>
+        <CardDescription>{new Date(message.createdAt).toLocaleString()}</CardDescription>
       </CardHeader>
       <CardContent>
+        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          {message.content}
+        </p>
+      </CardContent>
+      <CardFooter className="flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive">Delete</Button>
           </AlertDialogTrigger>
+
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogTitle>Delete this message?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
+                This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
+
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };

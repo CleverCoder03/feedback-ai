@@ -1,6 +1,7 @@
 "use client";
 
 import MessageCard from "@/components/MessageCard";
+import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -17,7 +18,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-const DashboardPage = () => {
+const  DashboardPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState<boolean>(false);
@@ -56,7 +57,7 @@ const DashboardPage = () => {
       setIsLoading(true);
       setIsSwitchLoading(true);
       try {
-        const response = await axios.get<ApiResponse>("/api/accept-messages");
+        const response = await axios.get<ApiResponse>("/api/get-messages");
         setMessages(response.data.messages || []);
 
         if (refresh) {
@@ -95,7 +96,7 @@ const DashboardPage = () => {
   };
 
     if (!session || !session.user) {
-    return <div>Please login</div>
+    return <div>Loading...</div>
   }
 
   console.log(session)
@@ -109,6 +110,8 @@ const DashboardPage = () => {
     toast.info("Copied!");
   };
     return (
+      <>
+      <Navbar />
       <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
         <h1 className="text-4xl font-bold mb-4">User Dashboard</h1>
 
@@ -173,6 +176,7 @@ const DashboardPage = () => {
           )}
         </div>
       </div>
+      </>
     );
 };
 

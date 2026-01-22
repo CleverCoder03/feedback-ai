@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: false,
-        message: "User not authenticated",
+        message: "Unauthorized",
       },
       { status: 401 }
     );
@@ -32,45 +32,47 @@ export async function POST(request: Request) {
       { new: true }
     );
 
-    if(!updatedUser){
-        return Response.json(
-            {
-                success: false,
-                message: "User not found"
-            }, {status: 404}
-        )
+    if (!updatedUser) {
+      return Response.json(
+        {
+          success: false,
+          message: "User not found",
+        },
+        { status: 404 }
+      );
     }
 
     return Response.json(
-            {
-                success: true,
-                message: "Accepting mesage status updated"
-            }, {status: 200}
-        )
+      {
+        success: true,
+        message: "Message acceptance status updated successfully",
+        isAcceptingMessages: updatedUser.isAcceptingMessages,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Failed to update message status", error);
     return Response.json(
       {
         success: false,
-        message: "Failed to update message status",
+        message: "Error updating message acceptance status",
       },
       { status: 500 }
     );
   }
 }
 
+export async function GET(request: Request) {
+  await dbConnect();
 
-export async function GET(request: Request){
-    await dbConnect()
+  const session = await getServerSession(authOptions);
+  const user: User = session?.user as User;
 
-    const session = await getServerSession(authOptions)
-    const user: User = session?.user as User
-
-    if (!session || !user) {
+  if (!session || !user) {
     return Response.json(
       {
         success: false,
-        message: "User not authenticated",
+        message: "Unauthorized",
       },
       { status: 401 }
     );
@@ -78,25 +80,33 @@ export async function GET(request: Request){
 
   const userId = user._id;
   try {
-    const foundUser = await UserModel.findById(userId)
-  
-    if(!foundUser) {
-      return Response.json({
+    const foundUser = await UserModel.findById(userId);
+
+    if (!foundUser) {
+      return Response.json(
+        {
           success: false,
-          message: "User not found"
-      }, {status: 404})
+          message: "User not found",
+        },
+        { status: 404 }
+      );
     }
-  
-    return Response.json({
-          success: true,
-          isAcceptingMessages: foundUser.isAcceptingMessages
-      }, {status: 200})
-  
+
+    return Response.json(
+      {
+        success: true,
+        isAcceptingMessages: foundUser.isAcceptingMessages,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Error while getting status", error)
-    return Response.json({
-          success: false,
-          message: "Error while getting status"
-      }, {status: 500})
+    console.error("Error while getting status", error);
+    return Response.json(
+      {
+        success: false,
+        message: "Error retrieving message acceptance status",
+      },
+      { status: 500 }
+    );
   }
 }

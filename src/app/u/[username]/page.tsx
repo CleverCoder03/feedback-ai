@@ -1,58 +1,37 @@
-"use client"
-import * as React from 'react';
-import { useState } from "react";
+"use client";
+
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react"; // For loading spinner
-import { useParams } from 'next/navigation';
+import { Loader2, Send, Sparkles } from "lucide-react"; 
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { toast } from "sonner"; // Assuming you use sonner or similar for toasts
 
 export default function PublicProfile() {
-  // State for the message textarea
   const [message, setMessage] = useState("");
-  
-  // State for the three suggested messages
   const [suggestions, setSuggestions] = useState<string[]>([
     "What's a hobby you've recently started?",
     "If you could have dinner with any historical figure, who would it be?",
     "What's a simple thing that makes you happy?"
   ]);
-  
-  // Loading states
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  
-  // Success/Error messages
-  const [statusMessage, setStatusMessage] = useState("");
 
-  // Get username from URL params (e.g., /u/john)
-  const { username } = useParams<{ username: string }>();
-  // const username = React.use(params);
+  const params = useParams<{ username: string }>();
+  const username = params.username;
 
-  /**
-   * Function to regenerate suggestions
-   * Calls the suggest-messages API and updates the suggestions
-   */
   const handleRegenerate = async () => {
     setIsRegenerating(true);
-    setStatusMessage("");
-    
     try {
-      // Call the suggest-messages API
-      const response = await fetch('/api/suggest-messages', {
-        method: 'POST',
-      });
+      const response = await fetch('/api/suggest-messages', { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to fetch suggestions');
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch suggestions');
-      }
-
-      // The API returns a stream, so we need to read it
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
 
-      // Read the stream chunk by chunk
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
@@ -61,172 +40,165 @@ export default function PublicProfile() {
         }
       }
 
-      // Split the response by || to get individual suggestions
       const newSuggestions = fullText
         .split('||')
         .map(s => s.trim())
         .filter(s => s.length > 0);
 
-      // Update suggestions if we got valid results
       if (newSuggestions.length > 0) {
         setSuggestions(newSuggestions);
+        toast.success("Suggestions refreshed!");
       }
-      
     } catch (error) {
       console.error('Error regenerating suggestions:', error);
-      setStatusMessage("Failed to regenerate suggestions. Please try again.");
+      toast.error("Failed to regenerate suggestions.");
     } finally {
       setIsRegenerating(false);
     }
   };
 
-  /**
-   * Function to send the message
-   * Calls the send-message API with username and content
-   */
   const handleSendMessage = async () => {
-    // Validation: Check if message is not empty
-    if (!message.trim()) {
-      setStatusMessage("Please write a message before sending.");
-      return;
-    }
+    if (!message.trim()) return;
 
     setIsSending(true);
-    setStatusMessage("");
-
     try {
-      // Call the send-message API
-      const response = await fetch('/api/send-messages', {
+      const response = await fetch('/api/send-messages', { // Fixed endpoint to singular based on typical convention, check your API route name
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          content: message,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, content: message }),
       });
 
       const data = await response.json();
-      console.log(data)
 
       if (data.success) {
-        // Success! Clear the message and show success message
         setMessage("");
-        setStatusMessage("Message sent successfully! 🎉");
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setStatusMessage(""), 3000);
+        toast.success("Message sent successfully! 🎉");
       } else {
-        // Handle error from API
-        setStatusMessage(data.message || "Failed to send message.");
+        toast.error(data.message || "Failed to send message.");
       }
-      
     } catch (error) {
       console.error('Error sending message:', error);
-      setStatusMessage("An error occurred. Please try again.");
+      toast.error("An error occurred. Please try again.");
     } finally {
       setIsSending(false);
     }
   };
 
+  const handleSuggestionClick = (text: string) => {
+      setMessage(text);
+  }
+
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-12 px-4">
-      {/* Header */}
-      <h1 className="text-4xl font-bold mb-12 text-slate-900">Public Profile Link</h1>
-
-      <div className="w-full max-w-2xl space-y-8">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center py-12 px-4 relative overflow-hidden">
         
-        {/* Input Section */}
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-slate-700">
-            Send Anonymous Message to @{username}
-          </label>
-          <Textarea 
-            placeholder="Write your message here..." 
-            className="min-h-[120px] resize-none border-slate-200"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            disabled={isSending}
-          />
-          
-          {/* Status Message */}
-          {statusMessage && (
-            <p className={`text-sm text-center ${
-              statusMessage.includes('successfully') 
-                ? 'text-green-600' 
-                : 'text-red-600'
-            }`}>
-              {statusMessage}
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[120px] -z-10"></div>
+      
+      <main className="w-full max-w-3xl space-y-8 z-10">
+        
+        {/* Header */}
+        <div className="text-center space-y-2">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+                Public Profile
+            </h1>
+            <p className="text-gray-400 text-lg">
+                Send an anonymous message to <span className="text-purple-400 font-semibold">@{username}</span>
             </p>
-          )}
-          
-          <div className="flex justify-center">
-            <Button 
-              className="bg-slate-950 hover:bg-slate-600 px-8 py-2 rounded-md"
-              onClick={handleSendMessage}
-              disabled={isSending || !message.trim()}
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                'Send It'
-              )}
-            </Button>
-          </div>
         </div>
 
-        <div className="text-sm text-slate-600 text-center">
-          Click on any message below to select it.
+        {/* Input Card */}
+        <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-2xl p-6 shadow-xl">
+             <div className="space-y-4">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <Send className="w-4 h-4 text-purple-400" />
+                    Write your message
+                </label>
+                <Textarea 
+                    placeholder="Type your secret message here..." 
+                    className="min-h-[150px] resize-none bg-gray-950/50 border-gray-800 text-gray-100 placeholder:text-gray-600 focus-visible:ring-purple-500 focus-visible:border-purple-500 rounded-xl p-4 text-base"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={isSending}
+                />
+                
+                <div className="flex justify-end">
+                    <Button 
+                        className={`px-8 py-6 rounded-xl font-bold transition-all duration-300 ${isSending ? 'bg-gray-700' : 'bg-white text-black hover:bg-gray-200 hover:scale-105 shadow-lg shadow-white/10'}`}
+                        onClick={handleSendMessage}
+                        disabled={isSending || !message.trim()}
+                    >
+                        {isSending ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Sending...
+                        </>
+                        ) : (
+                        <>
+                            Send Message <Send className="ml-2 h-4 w-4" />
+                        </>
+                        )}
+                    </Button>
+                </div>
+             </div>
         </div>
 
-        {/* Suggestions Card */}
-        <Card className="shadow-sm border-slate-100">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl font-bold">Messages</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRegenerate}
-              disabled={isRegenerating}
-            >
-              {isRegenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Regenerating...
-                </>
-              ) : (
-                'Regenerate'
-              )}
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {suggestions.map((text, index) => (
-              <button
-                key={index}
-                onClick={() => setMessage(text)}
-                className="w-full p-4 text-left border border-slate-100 rounded-md hover:bg-slate-50 transition-colors text-slate-800 text-sm"
-                disabled={isRegenerating || isSending}
-              >
-                {text}
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+        {/* Suggestions Section */}
+        <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+                 <div className="space-y-1">
+                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-yellow-400" /> 
+                        AI Suggestions
+                    </h3>
+                    <p className="text-sm text-gray-500">Click any card to use it</p>
+                 </div>
+                 
+                 <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                    {isRegenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshIcon />}
+                    <span className="ml-2 hidden sm:inline">Get New Ideas</span>
+                </Button>
+            </div>
 
-        <hr className="my-8 border-slate-100" />
-
-        {/* Footer Action */}
-        <div className="text-center space-y-4">
-          <p className="text-sm font-medium text-slate-800">Get Your Message Board</p>
-          <Button className="bg-slate-950 text-white hover:bg-slate-800 px-6 py-6 text-md rounded-lg">
-            Create Your Account
-          </Button>
+            <div className="grid gap-4 md:grid-cols-1">
+                {suggestions.map((text, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(text)}
+                        disabled={isRegenerating || isSending}
+                        className="group text-left p-5 bg-gray-900/40 border border-gray-800 rounded-xl hover:bg-gray-800/60 hover:border-purple-500/50 transition-all duration-200 active:scale-[0.99]"
+                    >
+                        <p className="text-gray-300 group-hover:text-white transition-colors">
+                            {text}
+                        </p>
+                    </button>
+                ))}
+            </div>
         </div>
-      </div>
+
+        {/* Footer CTA */}
+        <div className="pt-12 pb-8 text-center space-y-4">
+             <div className="inline-block w-full max-w-sm h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent mb-4"></div>
+             <p className="text-gray-400">Want to receive anonymous messages too?</p>
+             <Link href="/sign-up">
+                <Button variant="secondary" className="font-semibold rounded-full px-8">
+                    Create Your Own Board
+                </Button>
+             </Link>
+        </div>
+
+      </main>
     </div>
   );
+}
+
+// Small helper component for the refresh icon
+function RefreshIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-rotate-cw"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+    )
 }

@@ -4,9 +4,12 @@ import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User";
 import { User } from "next-auth";
 
-export async function DELETE(request: Request, props: {params: Promise<{id: string}>}) {
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
   const params = await props.params;
-  const messageId = params.id
+  const messageId = params.id;
   await dbConnect();
 
   const session = await getServerSession(authOptions);
@@ -16,34 +19,32 @@ export async function DELETE(request: Request, props: {params: Promise<{id: stri
     return Response.json(
       {
         success: false,
-        message: "Not Authenticated",
+        message: "Unauthorized", 
       },
       { status: 401 }
     );
   }
 
   try {
-    console.log("User ID:", user._id);
-  console.log("Message ID to delete:", messageId);
-    const updateResult = await UserModel.updateOne({
-        _id: user._id
-    }, {
-        $pull: {message: {_id: messageId}}
-    })
-    if (updateResult.modifiedCount === 0) {
-        return Response.json(
-      {
-        success: false,
-        message: "Message not found or could not be deleted",
-      },
-      { status: 404 }
+    const updateResult = await UserModel.updateOne(
+      { _id: user._id },
+      { $pull: { message: { _id: messageId } } }
     );
+
+    if (updateResult.modifiedCount === 0) {
+      return Response.json(
+        {
+          success: false,
+          message: "Message not found or already deleted",
+        },
+        { status: 404 }
+      );
     }
 
     return Response.json(
       {
         success: true,
-        message: "Message deleted successfully",
+        message: "Message deleted",
       },
       { status: 200 }
     );
@@ -52,7 +53,7 @@ export async function DELETE(request: Request, props: {params: Promise<{id: stri
     return Response.json(
       {
         success: false,
-        message: "Internal Server Error",
+        message: "Error deleting message",
       },
       { status: 500 }
     );

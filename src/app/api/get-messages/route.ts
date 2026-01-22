@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     return Response.json(
       {
         success: false,
-        message: "Not Authenticated",
+        message: "Unauthorized",
       },
       { status: 401 }
     );
@@ -24,18 +24,20 @@ export async function GET(request: Request) {
   const userId = new mongoose.Types.ObjectId(user._id);
 
   try {
-    const user = await UserModel.aggregate([
+    const userAggregate = await UserModel.aggregate([
       { $match: { _id: userId } },
       { $unwind: "$message" },
       { $sort: { "message.createdAt": -1 } },
       { $group: { _id: "$_id", messages: { $push: "$message" } } },
     ]);
 
-    if (!user || user.length === 0) {
+    if (!userAggregate || userAggregate.length === 0) {
+      // If the aggregation returns nothing, it usually means the user has no messages
+      // (due to the $unwind stage filtering out documents with empty arrays)
       return Response.json(
         {
           success: false,
-          message: "User not found",
+          message: "No messages found",
         },
         { status: 404 }
       );
@@ -44,7 +46,7 @@ export async function GET(request: Request) {
     return Response.json(
       {
         success: true,
-        messages: user[0].messages,
+        messages: userAggregate[0].messages,
       },
       { status: 200 }
     );
@@ -53,7 +55,7 @@ export async function GET(request: Request) {
     return Response.json(
       {
         success: false,
-        message: "Error getting messages",
+        message: "Error fetching messages",
       },
       { status: 500 }
     );
